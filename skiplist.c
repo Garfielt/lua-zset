@@ -36,7 +36,7 @@ skiplist *slCreate(void) {
     return sl;
 }
 
-slobj* slCreateObj(const char* ptr, size_t length) {
+slobj* slCreateObj(int integer, const char* ptr, size_t length) {
     slobj *obj = malloc(sizeof(*obj));
     obj->ptr    = malloc(length + 1);
 
@@ -45,6 +45,7 @@ slobj* slCreateObj(const char* ptr, size_t length) {
     }
     obj->ptr[length] = '\0';
 
+    obj->integer = integer;
     obj->length = length;
     return obj;
 }
@@ -79,9 +80,16 @@ int slRandomLevel(void) {
 }
 
 int compareslObj(slobj *a, slobj *b) {
-    int cmp = memcmp(a->ptr, b->ptr, a->length <= b->length ? a->length : b->length);
-    if(cmp == 0) return a->length - b->length;
-    return cmp;
+    if(a->integer == b->integer){
+        if(a->integer){
+            return 0;
+        }else{
+            int cmp = memcmp(a->ptr, b->ptr, a->length <= b->length ? a->length : b->length);
+            if(cmp == 0) return a->length - b->length;
+            return cmp;
+        }
+    }
+    return 1;
 }
 
 int equalslObj(slobj *a, slobj *b) {

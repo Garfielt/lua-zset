@@ -3,10 +3,12 @@
 
 #define SKIPLIST_MAXLEVEL 32
 #define SKIPLIST_P 0.25
+#define CONST_INTEGER_PTR "20200229"
 
 typedef struct slobj {
-    char *ptr;
+    int integer;
     size_t length;
+    char *ptr;
 } slobj;
 
 typedef struct skiplistNode {
@@ -26,7 +28,7 @@ typedef struct skiplist {
 } skiplist;
 
 typedef void (*slDeleteCb) (void *ud, slobj *obj);
-slobj* slCreateObj(const char* ptr, size_t length);
+slobj* slCreateObj(int integer, const char* ptr, size_t length);
 void slFreeObj(slobj *obj);
 
 skiplist *slCreate(void);

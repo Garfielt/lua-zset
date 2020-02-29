@@ -23,10 +23,20 @@ static int
 _insert(lua_State *L) {
     skiplist *sl = _to_skiplist(L);
     double score = luaL_checknumber(L, 2);
-    luaL_checktype(L, 3, LUA_TSTRING);
-    size_t len;
-    const char* ptr = lua_tolstring(L, 3, &len);
-    slobj *obj = slCreateObj(ptr, len);
+    //luaL_checktype(L, 3, LUA_TSTRING);
+    int type = lua_type(L, 3);
+    slobj *obj;
+    if(type == LUA_TNUMBER){
+        lua_Integer integer = lua_tointeger(L, 3);
+        obj = slCreateObj(integer, NULL, 0);
+    }else if(type == LUA_TSTRING){
+        size_t len;
+        const char* ptr = lua_tolstring(L, 3, &len);
+        obj = slCreateObj(0, ptr, len);
+    }else{
+        luaL_checktype(L, 3, LUA_TNUMBER);
+        luaL_checktype(L, 3, LUA_TSTRING);
+    }
     slInsert(sl, score, obj);
     return 0;
 }
@@ -35,9 +45,18 @@ static int
 _delete(lua_State *L) {
     skiplist *sl = _to_skiplist(L);
     double score = luaL_checknumber(L, 2);
-    luaL_checktype(L, 3, LUA_TSTRING);
+    //luaL_checktype(L, 3, LUA_TSTRING);
+    int type = lua_type(L, 3);
     slobj obj;
-    obj.ptr = (char *)lua_tolstring(L, 3, &obj.length);
+    if(type == LUA_TNUMBER){
+        lua_Integer integer = lua_tointeger(L, 3);
+        obj.integer = integer;
+        obj.ptr = NULL;
+        obj.length = 0;
+    }else if(type == LUA_TSTRING){
+        obj.integer = 0;
+        obj.ptr = (char *)lua_tolstring(L, 3, &obj.length);
+    }
     lua_pushboolean(L, slDelete(sl, score, &obj));
     return 1;
 }
@@ -46,7 +65,11 @@ static void
 _delete_rank_cb(void* ud, slobj *obj) {
     lua_State *L = (lua_State*)ud;
     lua_pushvalue(L, 4);
-    lua_pushlstring(L, obj->ptr, obj->length);
+    if(obj->integer){
+        lua_pushinteger(L, obj->integer);
+    }else{
+        lua_pushlstring(L, obj->ptr, obj->length);
+    }
     lua_call(L, 1, 0);
 }
 
@@ -77,9 +100,18 @@ static int
 _get_rank(lua_State *L) {
     skiplist *sl = _to_skiplist(L);
     double score = luaL_checknumber(L, 2);
-    luaL_checktype(L, 3, LUA_TSTRING);
+    //luaL_checktype(L, 3, LUA_TSTRING);
+    int type = lua_type(L, 3);
     slobj obj;
-    obj.ptr = (char *)lua_tolstring(L, 3, &obj.length);
+    if(type == LUA_TNUMBER){
+        lua_Integer integer = lua_tointeger(L, 3);
+        obj.integer = integer;
+        obj.ptr = NULL;
+        obj.length = 0;
+    }else if(type == LUA_TSTRING){
+        obj.integer = 0;
+        obj.ptr = (char *)lua_tolstring(L, 3, &obj.length);
+    }
 
     unsigned long rank = slGetRank(sl, score, &obj);
     if(rank == 0) {
@@ -111,7 +143,11 @@ _get_rank_range(lua_State *L) {
     while(node && n < rangelen) {
         n++;
 
-        lua_pushlstring(L, node->obj->ptr, node->obj->length);
+        if(node->obj->integer){
+            lua_pushinteger(L, node->obj->integer);
+        }else{
+            lua_pushlstring(L, node->obj->ptr, node->obj->length);
+        }
         lua_rawseti(L, -2, n);
         node = reverse? node->backward : node->level[0].forward;
     } 
@@ -144,7 +180,11 @@ _get_score_range(lua_State *L) {
         }
         n++;
 
-        lua_pushlstring(L, node->obj->ptr, node->obj->length);
+        if(node->obj->integer){
+            lua_pushinteger(L, node->obj->integer);
+        }else{
+            lua_pushlstring(L, node->obj->ptr, node->obj->length);
+        }
         lua_rawseti(L, -2, n);
 
         node = reverse? node->backward:node->level[0].forward;
