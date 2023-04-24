@@ -1,5 +1,4 @@
 local skiplist = require "skiplist.c"
-
 local mt = {}
 mt.__index = mt
 
@@ -32,31 +31,43 @@ function mt:_reverse_rank(r)
     return self.sl:get_count() - r + 1
 end
 
-function mt:limit(count)
+function mt:limit(count, delete_handler)
     local total = self.sl:get_count()
     if total <= count then
         return 0
     end
-    return self.sl:delete_by_rank(count+1, total, function (member)
+
+    local delete_function = function(member)
         self.tbl[member] = nil
-    end)
+        if delete_handler then
+            delete_handler(member)
+        end
+    end
+
+    return self.sl:delete_by_rank(count+1, total, delete_function)
 end
 
-function mt:rev_limit(count)
+function mt:rev_limit(count, delete_handler)
     local total = self.sl:get_count()
     if total <= count then
         return 0
     end
     local from = self:_reverse_rank(count+1)
     local to   = self:_reverse_rank(total)
-    return self.sl:delete_by_rank(from, to, function (member)
+
+    local delete_function = function(member)
         self.tbl[member] = nil
-    end)
+        if delete_handler then
+            delete_handler(member)
+        end
+    end
+
+    return self.sl:delete_by_rank(from, to, delete_function)
 end
 
 function mt:rev_range(r1, r2)
-    local r1 = self:_reverse_rank(r1)
-    local r2 = self:_reverse_rank(r2)
+    r1 = self:_reverse_rank(r1)
+    r2 = self:_reverse_rank(r2)
     return self:range(r1, r2)
 end
 
@@ -93,6 +104,17 @@ end
 
 function mt:score(member)
     return self.tbl[member]
+end
+
+function mt:member_by_rank(r)
+    return self.sl:get_member_by_rank(r)
+end
+
+function mt:member_by_rev_rank(r)
+    r = self:_reverse_rank(r)
+    if r > 0 then
+        return self.sl:get_member_by_rank(r)
+    end
 end
 
 function mt:dump()
